@@ -12,7 +12,7 @@ if (-not (Test-Path dist)) {
 }
 
 Write-Host "Compiling source..."
-javac -d out (Get-ChildItem -Recurse -Path src -Filter *.java | ForEach-Object { $_.FullName })
+javac -encoding UTF-8 -d out (Get-ChildItem -Recurse -Path src -Filter *.java | ForEach-Object { $_.FullName })
 
 Write-Host "Packaging jar..."
 jar cfe dist/ToolMaHoa.jar toolmahoa.Main -C out .

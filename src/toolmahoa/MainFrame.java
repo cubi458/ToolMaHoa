@@ -26,16 +26,17 @@ public class MainFrame extends JFrame {
     private final DigitalSignatureService signatureService = new DigitalSignatureService();
 
     public MainFrame() {
-        setTitle("Tool Ma Hoa - Giua Ky Java 2025");
+        setTitle("Tool Mã Hóa - Giữa Kỳ Java 2025");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(new Dimension(980, 680));
         setLocationRelativeTo(null);
 
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.addTab("Doi xung", buildSymmetricPanel());
-        tabbedPane.addTab("Bat doi xung (RSA)", buildAsymmetricPanel());
+        tabbedPane.addTab("Đối xứng", buildSymmetricPanel());
+        tabbedPane.addTab("Mã hóa cơ bản", buildBasicCryptoPanel());
+        tabbedPane.addTab("Bất đối xứng (RSA)", buildAsymmetricPanel());
         tabbedPane.addTab("Hash", buildHashPanel());
-        tabbedPane.addTab("Chu ky so", buildSignaturePanel());
+        tabbedPane.addTab("Chữ ký số", buildSignaturePanel());
 
         add(tabbedPane, BorderLayout.CENTER);
     }
@@ -64,13 +65,13 @@ public class MainFrame extends JFrame {
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        top.add(new JLabel("Giai thuat:"), gbc);
+        top.add(new JLabel("Giải thuật:"), gbc);
         gbc.gridx = 1;
         top.add(algorithmCombo, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
-        top.add(new JLabel("Kich thuoc key:"), gbc);
+        top.add(new JLabel("Kích thước key:"), gbc);
         gbc.gridx = 1;
         top.add(keySizeCombo, gbc);
 
@@ -80,7 +81,7 @@ public class MainFrame extends JFrame {
         gbc.gridx = 1;
         top.add(keyField, gbc);
 
-        JButton btnGenerateKey = new JButton("Tao Key");
+        JButton btnGenerateKey = new JButton("Tạo Key");
         gbc.gridx = 2;
         gbc.gridy = 2;
         top.add(btnGenerateKey, gbc);
@@ -93,7 +94,7 @@ public class MainFrame extends JFrame {
         cg.gridx = 0;
         cg.gridy = 0;
         cg.fill = GridBagConstraints.HORIZONTAL;
-        center.add(new JLabel("Ban ro:"), cg);
+        center.add(new JLabel("Bản rõ:"), cg);
         cg.gridy = 1;
         cg.fill = GridBagConstraints.BOTH;
         cg.weightx = 1;
@@ -103,7 +104,7 @@ public class MainFrame extends JFrame {
         cg.gridy = 2;
         cg.fill = GridBagConstraints.HORIZONTAL;
         cg.weighty = 0;
-        center.add(new JLabel("Ban ma (Base64):"), cg);
+        center.add(new JLabel("Bản mã (Base64):"), cg);
 
         cg.gridy = 3;
         cg.fill = GridBagConstraints.BOTH;
@@ -111,8 +112,8 @@ public class MainFrame extends JFrame {
         center.add(new JScrollPane(cipherTextArea), cg);
 
         JPanel bottom = new JPanel();
-        JButton btnEncrypt = new JButton("Ma hoa");
-        JButton btnDecrypt = new JButton("Giai ma");
+        JButton btnEncrypt = new JButton("Mã hóa");
+        JButton btnDecrypt = new JButton("Giải mã");
         bottom.add(btnEncrypt);
         bottom.add(btnDecrypt);
 
@@ -156,6 +157,108 @@ public class MainFrame extends JFrame {
         return panel;
     }
 
+    private JPanel buildBasicCryptoPanel() {
+        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        JPanel top = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = createDefaultGbc();
+
+        JComboBox<String> algorithmCombo = new JComboBox<>(
+                new String[] { "Caesar", "Vigenere", "Playfair", "Hill", "Affine" });
+        JTextField keyField = new JTextField(58);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        top.add(new JLabel("Giải thuật cơ bản:"), gbc);
+        gbc.gridx = 1;
+        top.add(algorithmCombo, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        top.add(new JLabel("Khóa:"), gbc);
+        gbc.gridx = 1;
+        top.add(keyField, gbc);
+
+        JButton btnGenerateKey = new JButton("Tạo Khóa");
+        gbc.gridx = 2;
+        gbc.gridy = 1;
+        top.add(btnGenerateKey, gbc);
+
+        JTextArea plainTextArea = new JTextArea(8, 72);
+        JTextArea cipherTextArea = new JTextArea(8, 72);
+
+        JPanel center = new JPanel(new GridBagLayout());
+        GridBagConstraints cg = createDefaultGbc();
+        cg.gridx = 0;
+        cg.gridy = 0;
+        cg.fill = GridBagConstraints.HORIZONTAL;
+        center.add(new JLabel("Bản rõ:"), cg);
+
+        cg.gridy = 1;
+        cg.fill = GridBagConstraints.BOTH;
+        cg.weightx = 1;
+        cg.weighty = 1;
+        center.add(new JScrollPane(plainTextArea), cg);
+
+        cg.gridy = 2;
+        cg.fill = GridBagConstraints.HORIZONTAL;
+        cg.weighty = 0;
+        center.add(new JLabel("Bản mã:"), cg);
+
+        cg.gridy = 3;
+        cg.fill = GridBagConstraints.BOTH;
+        cg.weighty = 1;
+        center.add(new JScrollPane(cipherTextArea), cg);
+
+        JPanel bottom = new JPanel();
+        JButton btnEncrypt = new JButton("Mã hóa");
+        JButton btnDecrypt = new JButton("Giải mã");
+        bottom.add(btnEncrypt);
+        bottom.add(btnDecrypt);
+
+        JLabel keyHint = new JLabel(
+                "Gợi ý khóa: Caesar=3 | Vigenere=LEMON | Playfair=MONARCHY | Hill=3,3,2,5 | Affine=5,8");
+
+        btnGenerateKey.addActionListener(e -> {
+            try {
+                String algorithm = (String) algorithmCombo.getSelectedItem();
+                String key = symmetricService.generateKeyBase64(algorithm, 0);
+                keyField.setText(key);
+            } catch (Exception ex) {
+                showError(ex);
+            }
+        });
+
+        btnEncrypt.addActionListener(e -> {
+            try {
+                String algorithm = (String) algorithmCombo.getSelectedItem();
+                String cipherText = symmetricService.encrypt(algorithm, keyField.getText(), plainTextArea.getText());
+                cipherTextArea.setText(cipherText);
+            } catch (Exception ex) {
+                showError(ex);
+            }
+        });
+
+        btnDecrypt.addActionListener(e -> {
+            try {
+                String algorithm = (String) algorithmCombo.getSelectedItem();
+                String plainText = symmetricService.decrypt(algorithm, keyField.getText(), cipherTextArea.getText());
+                plainTextArea.setText(plainText);
+            } catch (Exception ex) {
+                showError(ex);
+            }
+        });
+
+        panel.add(top, BorderLayout.NORTH);
+        panel.add(center, BorderLayout.CENTER);
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.add(keyHint, BorderLayout.NORTH);
+        southPanel.add(bottom, BorderLayout.SOUTH);
+        panel.add(southPanel, BorderLayout.SOUTH);
+        return panel;
+    }
+
     private JPanel buildAsymmetricPanel() {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
@@ -164,11 +267,11 @@ public class MainFrame extends JFrame {
         GridBagConstraints gbc = createDefaultGbc();
 
         JComboBox<String> keySizeCombo = new JComboBox<>(new String[] { "1024", "2048", "3072", "4096" });
-        JButton btnGenerate = new JButton("Tao cap key RSA");
+        JButton btnGenerate = new JButton("Tạo cặp key RSA");
 
         gbc.gridx = 0;
         gbc.gridy = 0;
-        top.add(new JLabel("Do dai key:"), gbc);
+        top.add(new JLabel("Độ dài key:"), gbc);
         gbc.gridx = 1;
         top.add(keySizeCombo, gbc);
         gbc.gridx = 2;
@@ -204,7 +307,7 @@ public class MainFrame extends JFrame {
         cg.gridy++;
         cg.fill = GridBagConstraints.HORIZONTAL;
         cg.weighty = 0;
-        center.add(new JLabel("Ban ro:"), cg);
+        center.add(new JLabel("Bản rõ:"), cg);
         cg.gridy++;
         cg.fill = GridBagConstraints.BOTH;
         cg.weighty = 0.4;
@@ -213,15 +316,15 @@ public class MainFrame extends JFrame {
         cg.gridy++;
         cg.fill = GridBagConstraints.HORIZONTAL;
         cg.weighty = 0;
-        center.add(new JLabel("Ban ma (Base64):"), cg);
+        center.add(new JLabel("Bản mã (Base64):"), cg);
         cg.gridy++;
         cg.fill = GridBagConstraints.BOTH;
         cg.weighty = 0.4;
         center.add(new JScrollPane(cipherTextArea), cg);
 
         JPanel bottom = new JPanel();
-        JButton btnEncrypt = new JButton("Ma hoa bang Public Key");
-        JButton btnDecrypt = new JButton("Giai ma bang Private Key");
+        JButton btnEncrypt = new JButton("Mã hóa bằng Public Key");
+        JButton btnDecrypt = new JButton("Giải mã bằng Private Key");
         bottom.add(btnEncrypt);
         bottom.add(btnDecrypt);
 
@@ -268,7 +371,7 @@ public class MainFrame extends JFrame {
         JComboBox<String> algorithmCombo = new JComboBox<>(
                 new String[] { "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512", "SHA3-256" });
         JButton btnHash = new JButton("Hash");
-        top.add(new JLabel("Thuat toan:"));
+        top.add(new JLabel("Thuật toán:"));
         top.add(algorithmCombo);
         top.add(btnHash);
 
@@ -282,7 +385,7 @@ public class MainFrame extends JFrame {
         cg.gridy = 0;
         cg.weightx = 1;
         cg.fill = GridBagConstraints.HORIZONTAL;
-        center.add(new JLabel("Du lieu dau vao:"), cg);
+        center.add(new JLabel("Dữ liệu đầu vào:"), cg);
         cg.gridy++;
         cg.fill = GridBagConstraints.BOTH;
         cg.weighty = 0.7;
@@ -291,7 +394,7 @@ public class MainFrame extends JFrame {
         cg.gridy++;
         cg.fill = GridBagConstraints.HORIZONTAL;
         cg.weighty = 0;
-        center.add(new JLabel("Gia tri hash (hex):"), cg);
+        center.add(new JLabel("Giá trị hash (hex):"), cg);
 
         cg.gridy++;
         cg.fill = GridBagConstraints.BOTH;
@@ -318,7 +421,7 @@ public class MainFrame extends JFrame {
 
         JPanel top = new JPanel();
         JComboBox<String> signatureAlgo = new JComboBox<>(new String[] { "SHA256withRSA", "SHA512withRSA" });
-        top.add(new JLabel("Giai thuat ky:"));
+        top.add(new JLabel("Giải thuật ký:"));
         top.add(signatureAlgo);
 
         JTextArea publicKeyArea = new JTextArea(5, 72);
@@ -352,7 +455,7 @@ public class MainFrame extends JFrame {
         cg.gridy++;
         cg.fill = GridBagConstraints.HORIZONTAL;
         cg.weighty = 0;
-        center.add(new JLabel("Thong diep can ky:"), cg);
+        center.add(new JLabel("Thông điệp cần ký:"), cg);
 
         cg.gridy++;
         cg.fill = GridBagConstraints.BOTH;
@@ -362,7 +465,7 @@ public class MainFrame extends JFrame {
         cg.gridy++;
         cg.fill = GridBagConstraints.HORIZONTAL;
         cg.weighty = 0;
-        center.add(new JLabel("Chu ky so (Base64):"), cg);
+        center.add(new JLabel("Chữ ký số (Base64):"), cg);
 
         cg.gridy++;
         cg.fill = GridBagConstraints.BOTH;
@@ -370,8 +473,8 @@ public class MainFrame extends JFrame {
         center.add(new JScrollPane(signatureArea), cg);
 
         JPanel bottom = new JPanel();
-        JButton btnSign = new JButton("Ky so");
-        JButton btnVerify = new JButton("Xac minh");
+        JButton btnSign = new JButton("Ký số");
+        JButton btnVerify = new JButton("Xác minh");
         bottom.add(btnSign);
         bottom.add(btnVerify);
 
@@ -390,8 +493,8 @@ public class MainFrame extends JFrame {
                 boolean verified = signatureService.verify(publicKeyArea.getText(), messageArea.getText(),
                         signatureArea.getText(), (String) signatureAlgo.getSelectedItem());
                 JOptionPane.showMessageDialog(this,
-                        verified ? "Chu ky HOP LE" : "Chu ky KHONG hop le",
-                        "Ket qua xac minh", JOptionPane.INFORMATION_MESSAGE);
+                    verified ? "Chữ ký HỢP LỆ" : "Chữ ký KHÔNG hợp lệ",
+                    "Kết quả xác minh", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 showError(ex);
             }
@@ -449,6 +552,6 @@ public class MainFrame extends JFrame {
     }
 
     private void showError(Exception ex) {
-        JOptionPane.showMessageDialog(this, ex.getMessage(), "Loi", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }
