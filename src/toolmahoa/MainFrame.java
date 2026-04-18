@@ -20,17 +20,20 @@ import javax.swing.JTextField;
 import javax.swing.WindowConstants;
 
 public class MainFrame extends JFrame {
+    // Mỗi service phụ trách một nhóm chức năng mật mã riêng để tách logic khỏi giao diện.
     private final SymmetricCryptoService symmetricService = new SymmetricCryptoService();
     private final AsymmetricCryptoService asymmetricService = new AsymmetricCryptoService();
     private final HashService hashService = new HashService();
     private final DigitalSignatureService signatureService = new DigitalSignatureService();
 
     public MainFrame() {
+        // Cấu hình cửa sổ chính của ứng dụng.
         setTitle("Tool Mã Hóa - Giữa Kỳ Java 2025");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(new Dimension(980, 680));
         setLocationRelativeTo(null);
 
+        // Tổ chức UI theo tab để người dùng thao tác theo từng chủ đề.
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab("Đối xứng", buildSymmetricPanel());
         tabbedPane.addTab("Mã hóa cơ bản", buildBasicCryptoPanel());
@@ -42,6 +45,7 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel buildSymmetricPanel() {
+        // Tab Đối xứng hiện đại: làm việc với các thuật toán hỗ trợ bởi JCE.
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
@@ -117,9 +121,11 @@ public class MainFrame extends JFrame {
         bottom.add(btnEncrypt);
         bottom.add(btnDecrypt);
 
+        // Khi đổi thuật toán, tự động chọn kích thước khóa mặc định phù hợp.
         algorithmCombo.addActionListener(e -> keySizeCombo.setSelectedItem(defaultKeySizeByAlgorithm((String) algorithmCombo
-                .getSelectedItem())));
+            .getSelectedItem())));
 
+        // Sinh khóa mới và đưa vào ô Key Base64 để người dùng dùng ngay.
         btnGenerateKey.addActionListener(e -> {
             try {
                 String algorithm = (String) algorithmCombo.getSelectedItem();
@@ -131,6 +137,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Mã hóa bản rõ -> bản mã Base64.
         btnEncrypt.addActionListener(e -> {
             try {
                 String algorithm = (String) algorithmCombo.getSelectedItem();
@@ -141,6 +148,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Giải mã bản mã Base64 -> bản rõ.
         btnDecrypt.addActionListener(e -> {
             try {
                 String algorithm = (String) algorithmCombo.getSelectedItem();
@@ -158,6 +166,8 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel buildBasicCryptoPanel() {
+        // Tab Mã hóa cơ bản: các thuật toán cổ điển tự cài đặt.
+        // Khóa là chuỗi nhập tay (không phải key nhị phân Base64 như nhóm hiện đại).
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
@@ -217,9 +227,11 @@ public class MainFrame extends JFrame {
         bottom.add(btnEncrypt);
         bottom.add(btnDecrypt);
 
+        // Gợi ý format khóa để người dùng nhập đúng ngay từ lần đầu.
         JLabel keyHint = new JLabel(
                 "Gợi ý khóa: Caesar=3 | Vigenere=LEMON | Playfair=MONARCHY | Hill=3,3,2,5 | Affine=5,8");
 
+        // Sinh khóa mẫu đúng định dạng theo thuật toán cơ bản đang chọn.
         btnGenerateKey.addActionListener(e -> {
             try {
                 String algorithm = (String) algorithmCombo.getSelectedItem();
@@ -230,6 +242,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Mã hóa bản rõ bằng thuật toán cơ bản.
         btnEncrypt.addActionListener(e -> {
             try {
                 String algorithm = (String) algorithmCombo.getSelectedItem();
@@ -240,6 +253,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Giải mã bản mã bằng đúng thuật toán/khóa cơ bản tương ứng.
         btnDecrypt.addActionListener(e -> {
             try {
                 String algorithm = (String) algorithmCombo.getSelectedItem();
@@ -260,6 +274,7 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel buildAsymmetricPanel() {
+        // Tab Bất đối xứng: RSA (Public Key để mã hóa, Private Key để giải mã).
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
@@ -328,6 +343,7 @@ public class MainFrame extends JFrame {
         bottom.add(btnEncrypt);
         bottom.add(btnDecrypt);
 
+        // Sinh cặp khóa RSA và hiển thị để người dùng có thể sao chép qua tab khác.
         btnGenerate.addActionListener(e -> {
             try {
                 int keySize = Integer.parseInt((String) keySizeCombo.getSelectedItem());
@@ -339,6 +355,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Mã hóa bản rõ bằng Public Key.
         btnEncrypt.addActionListener(e -> {
             try {
                 String cipherText = asymmetricService.encryptWithPublicKey(publicKeyArea.getText(), plainTextArea.getText());
@@ -348,6 +365,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Giải mã bản mã bằng Private Key.
         btnDecrypt.addActionListener(e -> {
             try {
                 String plainText = asymmetricService.decryptWithPrivateKey(privateKeyArea.getText(), cipherTextArea.getText());
@@ -364,6 +382,7 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel buildHashPanel() {
+        // Tab Hash: băm một chiều dữ liệu, không có bước giải mã.
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
@@ -401,6 +420,7 @@ public class MainFrame extends JFrame {
         cg.weighty = 0.3;
         center.add(new JScrollPane(outputArea), cg);
 
+        // Tính giá trị băm theo thuật toán người dùng chọn.
         btnHash.addActionListener(e -> {
             try {
                 String result = hashService.hashText((String) algorithmCombo.getSelectedItem(), inputArea.getText());
@@ -416,6 +436,7 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel buildSignaturePanel() {
+        // Tab Chữ ký số: ký và xác minh tính toàn vẹn/xác thực của thông điệp.
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
@@ -478,6 +499,7 @@ public class MainFrame extends JFrame {
         bottom.add(btnSign);
         bottom.add(btnVerify);
 
+        // Ký thông điệp bằng private key và hiển thị chữ ký dưới dạng Base64.
         btnSign.addActionListener(e -> {
             try {
                 String signature = signatureService.sign(privateKeyArea.getText(), messageArea.getText(),
@@ -488,6 +510,7 @@ public class MainFrame extends JFrame {
             }
         });
 
+        // Xác minh chữ ký bằng public key và hiển thị kết quả cho người dùng.
         btnVerify.addActionListener(e -> {
             try {
                 boolean verified = signatureService.verify(publicKeyArea.getText(), messageArea.getText(),
@@ -507,6 +530,7 @@ public class MainFrame extends JFrame {
     }
 
     private GridBagConstraints createDefaultGbc() {
+        // Thiết lập ràng buộc mặc định để tránh lặp code layout cho nhiều panel.
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.anchor = GridBagConstraints.WEST;
@@ -514,6 +538,7 @@ public class MainFrame extends JFrame {
     }
 
     private int parseKeySize(JComboBox<String> keySizeCombo, String algorithm) {
+        // Đảm bảo keySize luôn khớp thuật toán (ví dụ tránh chọn DES nhưng key lại AES:256).
         String value = (String) keySizeCombo.getSelectedItem();
         if (value == null || !value.startsWith(algorithm + ":")) {
             value = defaultKeySizeByAlgorithm(algorithm);
@@ -524,6 +549,7 @@ public class MainFrame extends JFrame {
     }
 
     private String defaultKeySizeByAlgorithm(String algorithm) {
+        // Trả về kích thước khóa mặc định phục vụ thao tác nhanh trên UI.
         if ("AES".equalsIgnoreCase(algorithm)) {
             return "AES:256";
         }
@@ -552,6 +578,7 @@ public class MainFrame extends JFrame {
     }
 
     private void showError(Exception ex) {
+        // Hộp thoại lỗi dùng chung cho mọi thao tác, giúp thông báo nhất quán.
         JOptionPane.showMessageDialog(this, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
     }
 }

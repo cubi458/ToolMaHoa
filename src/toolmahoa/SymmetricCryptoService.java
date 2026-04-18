@@ -20,10 +20,15 @@ import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class SymmetricCryptoService {
+    // Hằng số dùng chung cho các thuật toán mã hóa cơ bản.
+    // ALPHABET_SIZE = 26 vì các thuật toán cổ điển đang xử lý trên bảng chữ cái A-Z.
     private final SecureRandom secureRandom = new SecureRandom();
     private static final int ALPHABET_SIZE = 26;
     private static final int[] AFFINE_A_VALUES = new int[] { 1, 3, 5, 7, 9, 11, 15, 17, 19, 21, 23, 25 };
 
+    // Tạo khóa theo thuật toán được chọn.
+    // - Với thuật toán hiện đại: trả về khóa nhị phân dưới dạng Base64.
+    // - Với thuật toán cơ bản: trả về khóa dạng chuỗi dễ đọc (ví dụ "3", "LEMON", "5,8").
     public String generateKeyBase64(String algorithm, int keySize)
             throws NoSuchAlgorithmException {
         if (isManualAlgorithm(algorithm)) {
@@ -44,6 +49,8 @@ public class SymmetricCryptoService {
                 || "Affine".equalsIgnoreCase(algorithm);
     }
 
+    // Sinh khóa ngẫu nhiên cho các thuật toán cơ bản.
+    // Mỗi thuật toán có định dạng khóa khác nhau, nên UI chỉ cần gọi hàm này để lấy đúng format.
     private String generateManualKey(String algorithm) {
         if ("Caesar".equalsIgnoreCase(algorithm)) {
             return String.valueOf(1 + secureRandom.nextInt(25));
@@ -75,13 +82,17 @@ public class SymmetricCryptoService {
     }
 
     public String encrypt(String algorithm, String keyBase64, String plainText) throws Exception {
+        // Nhóm cơ bản đi theo nhánh tự cài đặt (không dùng Cipher của JCE).
         if (isManualAlgorithm(algorithm)) {
             return encryptManual(algorithm, keyBase64, plainText);
         }
 
+        // Nhóm đối xứng hiện đại dùng JCA/JCE: tạo SecretKeySpec từ khóa Base64.
         SecretKeySpec key = new SecretKeySpec(CryptoUtils.fromBase64(keyBase64), normalizeForKeySpec(algorithm));
 
         if ("ChaCha20".equalsIgnoreCase(algorithm)) {
+            // ChaCha20 yêu cầu nonce 12 byte + counter.
+            // Nonce phải đi kèm bản mã để phía giải mã khôi phục được trạng thái stream.
             byte[] nonce = new byte[12];
             secureRandom.nextBytes(nonce);
             int counter = 1;
@@ -90,6 +101,7 @@ public class SymmetricCryptoService {
             cipher.init(Cipher.ENCRYPT_MODE, key, spec);
             byte[] encrypted = cipher.doFinal(CryptoUtils.utf8Bytes(plainText));
 
+            // Ghép nonce + ciphertext thành một mảng duy nhất rồi Base64 để truyền/lưu trữ.
             byte[] merged = new byte[nonce.length + encrypted.length];
             System.arraycopy(nonce, 0, merged, 0, nonce.length);
             System.arraycopy(encrypted, 0, merged, nonce.length, encrypted.length);
@@ -103,10 +115,12 @@ public class SymmetricCryptoService {
     }
 
     public String decrypt(String algorithm, String keyBase64, String cipherTextBase64) throws Exception {
+        // Nhóm cơ bản đi theo nhánh tự cài đặt (không dùng Cipher của JCE).
         if (isManualAlgorithm(algorithm)) {
             return decryptManual(algorithm, keyBase64, cipherTextBase64);
         }
 
+        // Nhóm đối xứng hiện đại dùng JCA/JCE.
         SecretKeySpec key = new SecretKeySpec(CryptoUtils.fromBase64(keyBase64), normalizeForKeySpec(algorithm));
 
         if ("ChaCha20".equalsIgnoreCase(algorithm)) {
@@ -114,6 +128,7 @@ public class SymmetricCryptoService {
             if (merged.length <= 12) {
                 throw new IllegalArgumentException("Dữ liệu mã hóa ChaCha20 không hợp lệ.");
             }
+            // Tách nonce và ciphertext theo đúng format đã ghép khi mã hóa.
             byte[] nonce = new byte[12];
             byte[] encrypted = new byte[merged.length - 12];
             System.arraycopy(merged, 0, nonce, 0, 12);
@@ -134,6 +149,7 @@ public class SymmetricCryptoService {
     }
 
     private String normalizeForKeyGen(String algorithm) {
+        // RC4 trong JCE thường dùng tên ARCFOUR.
         if ("RC4".equalsIgnoreCase(algorithm)) {
             return "ARCFOUR";
         }
@@ -141,12 +157,15 @@ public class SymmetricCryptoService {
     }
 
     private String normalizeForKeySpec(String algorithm) {
+        // Đồng bộ tên thuật toán khi dựng SecretKeySpec.
         if ("RC4".equalsIgnoreCase(algorithm)) {
             return "ARCFOUR";
         }
         return algorithm;
     }
 
+    // Trả về transformation tương ứng cho Cipher của nhóm đối xứng hiện đại.
+    // Hàm này đóng vai trò "bảng ánh xạ" giữa tên hiển thị trên UI và tên chuẩn trong JCE.
     private String getCipherTransformation(String algorithm)
             throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
             InvalidAlgorithmParameterException, IllegalBlockSizeException, BadPaddingException {
@@ -177,6 +196,8 @@ public class SymmetricCryptoService {
         throw new NoSuchAlgorithmException("Giải thuật không được hỗ trợ: " + algorithm);
     }
 
+    // Bộ điều phối mã hóa cho các thuật toán cơ bản viết thủ công.
+    // Mỗi thuật toán có quy tắc riêng nên tách thành các hàm chuyên biệt.
     private String encryptManual(String algorithm, String key, String plainText) {
         if ("Caesar".equalsIgnoreCase(algorithm)) {
             int shift = Integer.parseInt(key.trim());
@@ -199,6 +220,7 @@ public class SymmetricCryptoService {
         throw new IllegalArgumentException("Giải thuật không được hỗ trợ: " + algorithm);
     }
 
+    // Bộ điều phối giải mã cho các thuật toán cơ bản viết thủ công.
     private String decryptManual(String algorithm, String key, String cipherText) {
         if ("Caesar".equalsIgnoreCase(algorithm)) {
             int shift = Integer.parseInt(key.trim());
@@ -221,6 +243,7 @@ public class SymmetricCryptoService {
         throw new IllegalArgumentException("Giải thuật không được hỗ trợ: " + algorithm);
     }
 
+    // Sinh khóa chữ in hoa ngẫu nhiên (A-Z), dùng cho Vigenère/Playfair.
     private String randomUppercaseKey(int len) {
         StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
@@ -229,6 +252,8 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Caesar Cipher: dịch chuyển mỗi ký tự một lượng shift trong modulo 26.
+    // Hàm này dùng chung cho cả mã hóa (shift dương) và giải mã (shift âm).
     private String caesarTransform(String input, int shift) {
         StringBuilder sb = new StringBuilder(input.length());
         int normalized = mod(shift, ALPHABET_SIZE);
@@ -244,6 +269,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Vigenère Cipher: dịch chuyển theo từng ký tự khóa lặp lại tuần hoàn.
     private String vigenereEncrypt(String text, String key) {
         String cleanKey = cleanLetters(key);
         if (cleanKey.isEmpty()) {
@@ -267,6 +293,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Giải mã Vigenère: tương tự mã hóa nhưng trừ độ dịch thay vì cộng.
     private String vigenereDecrypt(String text, String key) {
         String cleanKey = cleanLetters(key);
         if (cleanKey.isEmpty()) {
@@ -290,6 +317,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Affine Cipher: E(x) = (a*x + b) mod 26.
     private String affineEncrypt(String text, int a, int b) {
         validateAffineA(a);
         StringBuilder sb = new StringBuilder(text.length());
@@ -307,6 +335,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Giải mã Affine: D(x) = a^-1 * (x - b) mod 26.
     private String affineDecrypt(String text, int a, int b) {
         validateAffineA(a);
         int invA = modInverse(a, ALPHABET_SIZE);
@@ -325,6 +354,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Parse khóa Affine từ dạng "a,b" và chuẩn hóa về modulo 26.
     private int[] parseAffineKey(String key) {
         String[] parts = key.trim().split(",");
         if (parts.length != 2) {
@@ -336,12 +366,14 @@ public class SymmetricCryptoService {
         return new int[] { a, mod(b, ALPHABET_SIZE) };
     }
 
+    // Điều kiện khả nghịch của Affine: gcd(a,26)=1 để tồn tại a^-1 mod 26.
     private void validateAffineA(int a) {
         if (gcd(mod(a, ALPHABET_SIZE), ALPHABET_SIZE) != 1) {
             throw new IllegalArgumentException("Giá trị a của Affine phải nguyên tố cùng nhau với 26.");
         }
     }
 
+    // Hill Cipher (ma trận 2x2): parse và kiểm tra khóa có khả nghịch modulo 26.
     private int[] parseHillKey(String key) {
         String[] parts = key.trim().split(",");
         if (parts.length != 4) {
@@ -358,6 +390,8 @@ public class SymmetricCryptoService {
         return m;
     }
 
+    // Mã hóa Hill theo từng cặp ký tự (vector 2 chiều).
+    // Nếu độ dài lẻ thì thêm 'X' để đủ block 2 ký tự.
     private String hillEncrypt(String text, int[] m) {
         String clean = cleanLetters(text).toUpperCase();
         if (clean.length() % 2 != 0) {
@@ -375,6 +409,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // Giải mã Hill: tính ma trận nghịch đảo của khóa trong modulo 26 rồi nhân ngược lại.
     private String hillDecrypt(String text, int[] m) {
         String clean = cleanLetters(text).toUpperCase();
         if (clean.length() % 2 != 0) {
@@ -402,6 +437,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // Playfair Cipher: mã hóa theo cặp ký tự với ma trận 5x5 (gộp I/J).
     private String playfairEncrypt(String text, String key) {
         char[][] matrix = buildPlayfairMatrix(key);
         List<char[]> pairs = splitPlayfairPairs(text);
@@ -424,6 +460,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // Giải mã Playfair: đi ngược quy tắc hàng/cột/hình chữ nhật so với khi mã hóa.
     private String playfairDecrypt(String text, String key) {
         char[][] matrix = buildPlayfairMatrix(key);
         String clean = cleanLetters(text).toUpperCase().replace('J', 'I');
@@ -452,6 +489,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // Tạo ma trận Playfair từ khóa: loại trùng, bỏ J, bổ sung phần còn thiếu của bảng chữ cái.
     private char[][] buildPlayfairMatrix(String key) {
         String source = (cleanLetters(key) + "ABCDEFGHIKLMNOPQRSTUVWXYZ").toUpperCase().replace('J', 'I');
         Set<Character> seen = new HashSet<>();
@@ -475,6 +513,8 @@ public class SymmetricCryptoService {
         return matrix;
     }
 
+    // Tách bản rõ thành các cặp cho Playfair.
+    // Nếu trùng ký tự trong cặp thì chèn 'X'; nếu lẻ cuối chuỗi thì đệm 'X'.
     private List<char[]> splitPlayfairPairs(String text) {
         String clean = cleanLetters(text).toUpperCase().replace('J', 'I');
         List<char[]> pairs = new ArrayList<>();
@@ -499,6 +539,7 @@ public class SymmetricCryptoService {
         return pairs;
     }
 
+    // Tìm vị trí (hàng, cột) của ký tự trong ma trận Playfair.
     private int[] findPlayfairPosition(char[][] matrix, char target) {
         char t = target == 'J' ? 'I' : target;
         for (int r = 0; r < 5; r++) {
@@ -511,6 +552,7 @@ public class SymmetricCryptoService {
         throw new IllegalArgumentException("Ký tự không tồn tại trong ma trận Playfair: " + target);
     }
 
+    // Lọc chỉ giữ ký tự chữ cái; dùng cho các thuật toán cổ điển xử lý trên A-Z.
     private String cleanLetters(String text) {
         StringBuilder sb = new StringBuilder(text.length());
         for (char ch : text.toCharArray()) {
@@ -521,6 +563,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // Tìm nghịch đảo modulo bằng duyệt tuyến tính (đủ cho modulo nhỏ như 26).
     private int modInverse(int a, int mod) {
         int x = mod(a, mod);
         for (int i = 1; i < mod; i++) {
@@ -531,6 +574,7 @@ public class SymmetricCryptoService {
         throw new IllegalArgumentException("Không tồn tại nghịch đảo modulo.");
     }
 
+    // Ước chung lớn nhất (Euclid) để kiểm tra điều kiện khả nghịch.
     private int gcd(int a, int b) {
         int x = Math.abs(a);
         int y = Math.abs(b);
@@ -542,6 +586,7 @@ public class SymmetricCryptoService {
         return x;
     }
 
+    // Modulo an toàn cho số âm.
     private int mod(int value, int mod) {
         int r = value % mod;
         return r < 0 ? r + mod : r;
