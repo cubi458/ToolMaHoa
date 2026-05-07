@@ -292,7 +292,8 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
-    // Caesar Cipher: dịch chuyển mỗi ký tự một lượng shift trong modulo 26.
+    // CAESAR CIPHER
+    // CAESAR CIPHER: DỊCH CHUYỂN MỖI KÝ TỰ MỘT LƯỢNG SHIFT TRONG MODULO 26.
     // Hàm này dùng chung cho cả mã hóa (shift dương) và giải mã (shift âm).
     private String caesarTransform(String input, int shift) {
         StringBuilder sb = new StringBuilder(input.length());
@@ -309,7 +310,8 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
-    // Vigenère Cipher: dịch chuyển theo từng ký tự khóa lặp lại tuần hoàn.
+    // VIGENERE CIPHER
+    // VIGENERE CIPHER: DỊCH CHUYỂN THEO TỪNG KÝ TỰ KHÓA LẶP LẠI TUẦN HOÀN.
     private String vigenereEncrypt(String text, String key) {
         String cleanKey = cleanLetters(key);
         if (cleanKey.isEmpty()) {
@@ -333,6 +335,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // VIGENERE CIPHER DECRYPT
     // Giải mã Vigenère: tương tự mã hóa nhưng trừ độ dịch thay vì cộng.
     private String vigenereDecrypt(String text, String key) {
         String cleanKey = cleanLetters(key);
@@ -357,7 +360,8 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
-    // Affine Cipher: E(x) = (a*x + b) mod 26.
+    // AFFINE CIPHER
+    // AFFINE CIPHER: E(x) = (a*x + b) mod 26.
     private String affineEncrypt(String text, int a, int b) {
         validateAffineA(a);
         StringBuilder sb = new StringBuilder(text.length());
@@ -375,6 +379,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // AFFINE CIPHER DECRYPT
     // Giải mã Affine: D(x) = a^-1 * (x - b) mod 26.
     private String affineDecrypt(String text, int a, int b) {
         validateAffineA(a);
@@ -394,6 +399,7 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
+    // AFFINE KEY PARSE
     // Parse khóa Affine từ dạng "a,b" và chuẩn hóa về modulo 26.
     private int[] parseAffineKey(String key) {
         String[] parts = key.trim().split(",");
@@ -406,6 +412,7 @@ public class SymmetricCryptoService {
         return new int[] { a, mod(b, ALPHABET_SIZE) };
     }
 
+    // AFFINE UTILITY
     // Điều kiện khả nghịch của Affine: gcd(a,26)=1 để tồn tại a^-1 mod 26.
     private void validateAffineA(int a) {
         if (gcd(mod(a, ALPHABET_SIZE), ALPHABET_SIZE) != 1) {
@@ -413,7 +420,8 @@ public class SymmetricCryptoService {
         }
     }
 
-    // Hill Cipher (ma trận 2x2): parse và kiểm tra khóa có khả nghịch modulo 26.
+    // HILL CIPHER
+    // HILL CIPHER (ma trận 2x2): parse và kiểm tra khóa có khả nghịch modulo 26.
     private int[] parseHillKey(String key) {
         String[] parts = key.trim().split(",");
         if (parts.length != 4) {
@@ -430,8 +438,8 @@ public class SymmetricCryptoService {
         return m;
     }
 
-    // Mã hóa Hill theo từng cặp ký tự (vector 2 chiều).
-    // Nếu độ dài lẻ thì thêm 'X' để đủ block 2 ký tự.
+    // HILL CIPHER ENCRYPT
+    // Mã hóa Hill theo từng cặp ký tự (vector 2x2). Nếu độ dài lẻ thì thêm 'X' để đủ block 2 ký tự.
     private String hillEncrypt(String text, int[] m) {
         String clean = cleanLetters(text).toUpperCase();
         if (clean.length() % 2 != 0) {
@@ -449,6 +457,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // HILL CIPHER DECRYPT
     // Giải mã Hill: tính ma trận nghịch đảo của khóa trong modulo 26 rồi nhân ngược lại.
     private String hillDecrypt(String text, int[] m) {
         String clean = cleanLetters(text).toUpperCase();
@@ -477,7 +486,8 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
-    // Playfair Cipher: mã hóa theo cặp ký tự với ma trận 5x5 (gộp I/J).
+    // PLAYFAIR CIPHER
+    // PLAYFAIR CIPHER: mã hóa theo cặp ký tự với ma trận 5x5 (gộp I/J).
     private String playfairEncrypt(String text, String key) {
         char[][] matrix = buildPlayfairMatrix(key);
         List<char[]> pairs = splitPlayfairPairs(text);
@@ -500,6 +510,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // PLAYFAIR CIPHER DECRYPT
     // Giải mã Playfair: đi ngược quy tắc hàng/cột/hình chữ nhật so với khi mã hóa.
     private String playfairDecrypt(String text, String key) {
         char[][] matrix = buildPlayfairMatrix(key);
@@ -529,6 +540,7 @@ public class SymmetricCryptoService {
         return out.toString();
     }
 
+    // PLAYFAIR MATRIX BUILD
     // Tạo ma trận Playfair từ khóa: loại trùng, bỏ J, bổ sung phần còn thiếu của bảng chữ cái.
     private char[][] buildPlayfairMatrix(String key) {
         String source = (cleanLetters(key) + "ABCDEFGHIKLMNOPQRSTUVWXYZ").toUpperCase().replace('J', 'I');
@@ -553,6 +565,7 @@ public class SymmetricCryptoService {
         return matrix;
     }
 
+    // PLAYFAIR PAIR SPLIT
     // Tách bản rõ thành các cặp cho Playfair.
     // Nếu trùng ký tự trong cặp thì chèn 'X'; nếu lẻ cuối chuỗi thì đệm 'X'.
     private List<char[]> splitPlayfairPairs(String text) {
@@ -579,6 +592,7 @@ public class SymmetricCryptoService {
         return pairs;
     }
 
+    // PLAYFAIR POSITION FIND
     // Tìm vị trí (hàng, cột) của ký tự trong ma trận Playfair.
     private int[] findPlayfairPosition(char[][] matrix, char target) {
         char t = target == 'J' ? 'I' : target;
@@ -592,6 +606,7 @@ public class SymmetricCryptoService {
         throw new IllegalArgumentException("Ký tự không tồn tại trong ma trận Playfair: " + target);
     }
 
+    // CLEAN LETTERS
     // Lọc chỉ giữ ký tự chữ cái; dùng cho các thuật toán cổ điển xử lý trên A-Z.
     private String cleanLetters(String text) {
         StringBuilder sb = new StringBuilder(text.length());
@@ -632,8 +647,8 @@ public class SymmetricCryptoService {
         return r < 0 ? r + mod : r;
     }
 
-    // ------------------ Substitution (monoalphabetic) ------------------
-    // Key: 26-letter permutation mapping A->key.charAt(0), B->key.charAt(1), ...
+    // SUBSTITUTION CIPHER
+    // SUBSTITUTION (MONOALPHABETIC): Key is 26-letter permutation mapping A->key.charAt(0), B->key.charAt(1), ...
     private String substitutionEncrypt(String text, String key) {
         String k = key.trim().toUpperCase();
         if (k.length() != ALPHABET_SIZE) {
@@ -683,8 +698,8 @@ public class SymmetricCryptoService {
         return sb.toString();
     }
 
-    // ------------------ Permutation (block transposition) ------------------
-    // Key format: comma-separated indices representing permutation of 0..n-1
+    // PERMUTATION CIPHER
+    // PERMUTATION (BLOCK TRANSPOSITION): Key format is comma-separated indices representing a permutation of 0..n-1
     private int[] parsePermutationKey(String key) {
         String[] parts = key.trim().split(",");
         int n = parts.length;
