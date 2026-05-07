@@ -53,17 +53,13 @@ public class MainFrame extends JFrame {
         GridBagConstraints gbc = createDefaultGbc();
 
         JComboBox<String> algorithmCombo = new JComboBox<>(new String[] {
-                "AES", "DES", "DESede", "Blowfish", "RC4", "ChaCha20", "Twofish", "Serpent"
+                "AES", "DES", "DESede", "ChaCha20"
         });
         JComboBox<String> keySizeCombo = new JComboBox<>(new String[] {
                 "AES:128", "AES:192", "AES:256",
                 "DES:56",
                 "DESede:112", "DESede:168",
-                "Blowfish:128", "Blowfish:256", "Blowfish:448",
-                "RC4:128", "RC4:256",
-                "ChaCha20:256",
-                "Twofish:128", "Twofish:192", "Twofish:256",
-                "Serpent:128", "Serpent:192", "Serpent:256"
+                "ChaCha20:256"
         });
         JTextField keyField = new JTextField(58);
 
@@ -175,7 +171,7 @@ public class MainFrame extends JFrame {
         GridBagConstraints gbc = createDefaultGbc();
 
         JComboBox<String> algorithmCombo = new JComboBox<>(
-                new String[] { "Caesar", "Vigenere", "Playfair", "Hill", "Affine" });
+                new String[] { "Caesar", "Vigenere", "Playfair", "Hill", "Affine", "Substitution", "Permutation" });
         JTextField keyField = new JTextField(58);
 
         gbc.gridx = 0;
@@ -229,7 +225,7 @@ public class MainFrame extends JFrame {
 
         // Gợi ý format khóa để người dùng nhập đúng ngay từ lần đầu.
         JLabel keyHint = new JLabel(
-                "Gợi ý khóa: Caesar=3 | Vigenere=LEMON | Playfair=MONARCHY | Hill=3,3,2,5 | Affine=5,8");
+                "Gợi ý khóa: Caesar=3 | Vigenere=LEMON | Playfair=MONARCHY | Hill=3,3,2,5 | Affine=5,8 | Substitution=QWERTYUIOPASDFGHJKLZXCVBNM | Permutation=2,0,1");
 
         // Sinh khóa mẫu đúng định dạng theo thuật toán cơ bản đang chọn.
         btnGenerateKey.addActionListener(e -> {
@@ -559,20 +555,8 @@ public class MainFrame extends JFrame {
         if ("DESede".equalsIgnoreCase(algorithm)) {
             return "DESede:168";
         }
-        if ("Blowfish".equalsIgnoreCase(algorithm)) {
-            return "Blowfish:256";
-        }
-        if ("RC4".equalsIgnoreCase(algorithm)) {
-            return "RC4:256";
-        }
         if ("ChaCha20".equalsIgnoreCase(algorithm)) {
             return "ChaCha20:256";
-        }
-        if ("Twofish".equalsIgnoreCase(algorithm)) {
-            return "Twofish:256";
-        }
-        if ("Serpent".equalsIgnoreCase(algorithm)) {
-            return "Serpent:256";
         }
         return "AES:256";
     }

@@ -175,18 +175,10 @@ public class SymmetricCryptoService {
     }
 
     private String normalizeForKeyGen(String algorithm) {
-        // RC4 trong JCE thường dùng tên ARCFOUR.
-        if ("RC4".equalsIgnoreCase(algorithm)) {
-            return "ARCFOUR";
-        }
         return algorithm;
     }
 
     private String normalizeForKeySpec(String algorithm) {
-        // Đồng bộ tên thuật toán khi dựng SecretKeySpec.
-        if ("RC4".equalsIgnoreCase(algorithm)) {
-            return "ARCFOUR";
-        }
         return algorithm;
     }
 
@@ -203,20 +195,6 @@ public class SymmetricCryptoService {
         }
         if ("DESede".equalsIgnoreCase(algorithm)) {
             return "DESede/ECB/PKCS5Padding";
-        }
-        if ("Blowfish".equalsIgnoreCase(algorithm)) {
-            return "Blowfish/ECB/PKCS5Padding";
-        }
-        if ("RC4".equalsIgnoreCase(algorithm)) {
-            return "ARCFOUR";
-        }
-        if ("Twofish".equalsIgnoreCase(algorithm)) {
-            // Yêu cầu provider BC trong runtime.
-            return "Twofish/ECB/PKCS5Padding";
-        }
-        if ("Serpent".equalsIgnoreCase(algorithm)) {
-            // Yêu cầu provider BC trong runtime.
-            return "Serpent/ECB/PKCS5Padding";
         }
 
         throw new NoSuchAlgorithmException("Giải thuật không được hỗ trợ: " + algorithm);
