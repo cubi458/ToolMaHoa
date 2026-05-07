@@ -46,7 +46,9 @@ public class SymmetricCryptoService {
                 || "Vigenere".equalsIgnoreCase(algorithm)
                 || "Playfair".equalsIgnoreCase(algorithm)
                 || "Hill".equalsIgnoreCase(algorithm)
-                || "Affine".equalsIgnoreCase(algorithm);
+                || "Affine".equalsIgnoreCase(algorithm)
+                || "Substitution".equalsIgnoreCase(algorithm)
+                || "Permutation".equalsIgnoreCase(algorithm);
     }
 
     // Sinh khóa ngẫu nhiên cho các thuật toán cơ bản.
@@ -77,6 +79,30 @@ public class SymmetricCryptoService {
                     return a + "," + b + "," + c + "," + d;
                 }
             }
+        }
+        if ("Substitution".equalsIgnoreCase(algorithm)) {
+            // generate random permutation of A-Z
+            java.util.List<Character> letters = new java.util.ArrayList<>(ALPHABET_SIZE);
+            for (char c = 'A'; c <= 'Z'; c++) letters.add(c);
+            StringBuilder sb = new StringBuilder(26);
+            while (!letters.isEmpty()) {
+                int idx = secureRandom.nextInt(letters.size());
+                sb.append(letters.remove(idx));
+            }
+            return sb.toString();
+        }
+        if ("Permutation".equalsIgnoreCase(algorithm)) {
+            // default small block transposition of length 5
+            int n = 5;
+            java.util.List<Integer> idx = new java.util.ArrayList<>();
+            for (int i = 0; i < n; i++) idx.add(i);
+            StringBuilder sb = new StringBuilder();
+            while (!idx.isEmpty()) {
+                int p = secureRandom.nextInt(idx.size());
+                sb.append(idx.remove(p));
+                if (!idx.isEmpty()) sb.append(',');
+            }
+            return sb.toString();
         }
         throw new IllegalArgumentException("Giải thuật không được hỗ trợ: " + algorithm);
     }
@@ -217,6 +243,13 @@ public class SymmetricCryptoService {
             int[] m = parseHillKey(key);
             return hillEncrypt(plainText, m);
         }
+        if ("Substitution".equalsIgnoreCase(algorithm)) {
+            return substitutionEncrypt(plainText, key);
+        }
+        if ("Permutation".equalsIgnoreCase(algorithm)) {
+            int[] perm = parsePermutationKey(key);
+            return permutationEncrypt(plainText, perm);
+        }
         throw new IllegalArgumentException("Giải thuật không được hỗ trợ: " + algorithm);
     }
 
@@ -239,6 +272,13 @@ public class SymmetricCryptoService {
         if ("Hill".equalsIgnoreCase(algorithm)) {
             int[] m = parseHillKey(key);
             return hillDecrypt(cipherText, m);
+        }
+        if ("Substitution".equalsIgnoreCase(algorithm)) {
+            return substitutionDecrypt(cipherText, key);
+        }
+        if ("Permutation".equalsIgnoreCase(algorithm)) {
+            int[] perm = parsePermutationKey(key);
+            return permutationDecrypt(cipherText, perm);
         }
         throw new IllegalArgumentException("Giải thuật không được hỗ trợ: " + algorithm);
     }
@@ -590,5 +630,113 @@ public class SymmetricCryptoService {
     private int mod(int value, int mod) {
         int r = value % mod;
         return r < 0 ? r + mod : r;
+    }
+
+    // ------------------ Substitution (monoalphabetic) ------------------
+    // Key: 26-letter permutation mapping A->key.charAt(0), B->key.charAt(1), ...
+    private String substitutionEncrypt(String text, String key) {
+        String k = key.trim().toUpperCase();
+        if (k.length() != ALPHABET_SIZE) {
+            throw new IllegalArgumentException("Khóa Substitution phải có 26 ký tự.");
+        }
+        boolean[] seen = new boolean[ALPHABET_SIZE];
+        for (char c : k.toCharArray()) {
+            if (c < 'A' || c > 'Z') throw new IllegalArgumentException("Khóa Substitution chỉ chứa chữ cái A-Z.");
+            int idx = c - 'A';
+            if (seen[idx]) throw new IllegalArgumentException("Khóa Substitution không được có ký tự trùng lặp.");
+            seen[idx] = true;
+        }
+        StringBuilder sb = new StringBuilder(text.length());
+        for (char ch : text.toCharArray()) {
+            if (ch >= 'A' && ch <= 'Z') {
+                sb.append(k.charAt(ch - 'A'));
+            } else if (ch >= 'a' && ch <= 'z') {
+                char mapped = k.charAt(ch - 'a');
+                sb.append(Character.toLowerCase(mapped));
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    private String substitutionDecrypt(String text, String key) {
+        String k = key.trim().toUpperCase();
+        if (k.length() != ALPHABET_SIZE) {
+            throw new IllegalArgumentException("Khóa Substitution phải có 26 ký tự.");
+        }
+        char[] inv = new char[ALPHABET_SIZE];
+        for (int i = 0; i < ALPHABET_SIZE; i++) {
+            inv[k.charAt(i) - 'A'] = (char) ('A' + i);
+        }
+        StringBuilder sb = new StringBuilder(text.length());
+        for (char ch : text.toCharArray()) {
+            if (ch >= 'A' && ch <= 'Z') {
+                sb.append(inv[ch - 'A']);
+            } else if (ch >= 'a' && ch <= 'z') {
+                char mapped = inv[Character.toUpperCase(ch) - 'A'];
+                sb.append(Character.toLowerCase(mapped));
+            } else {
+                sb.append(ch);
+            }
+        }
+        return sb.toString();
+    }
+
+    // ------------------ Permutation (block transposition) ------------------
+    // Key format: comma-separated indices representing permutation of 0..n-1
+    private int[] parsePermutationKey(String key) {
+        String[] parts = key.trim().split(",");
+        int n = parts.length;
+        int[] perm = new int[n];
+        boolean[] seen = new boolean[n];
+        for (int i = 0; i < n; i++) {
+            try {
+                perm[i] = Integer.parseInt(parts[i].trim());
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Khóa Permutation không hợp lệ.");
+            }
+            if (perm[i] < 0 || perm[i] >= n) throw new IllegalArgumentException("Chỉ số trong Permutation ngoài phạm vi.");
+            if (seen[perm[i]]) throw new IllegalArgumentException("Khóa Permutation phải là một hoán vị (không lặp).");
+            seen[perm[i]] = true;
+        }
+        return perm;
+    }
+
+    private String permutationEncrypt(String text, int[] perm) {
+        int n = perm.length;
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < text.length(); i += n) {
+            char[] block = new char[n];
+            for (int j = 0; j < n; j++) {
+                int src = i + j;
+                block[j] = src < text.length() ? text.charAt(src) : 'X';
+            }
+            for (int j = 0; j < n; j++) {
+                out.append(block[perm[j]]);
+            }
+        }
+        return out.toString();
+    }
+
+    private String permutationDecrypt(String text, int[] perm) {
+        int n = perm.length;
+        // build inverse permutation: inv[outPos]=inPos
+        int[] inv = new int[n];
+        for (int i = 0; i < n; i++) inv[perm[i]] = i;
+        StringBuilder out = new StringBuilder();
+        for (int i = 0; i < text.length(); i += n) {
+            char[] block = new char[n];
+            for (int j = 0; j < n; j++) {
+                int src = i + j;
+                block[j] = src < text.length() ? text.charAt(src) : 'X';
+            }
+            char[] orig = new char[n];
+            for (int j = 0; j < n; j++) {
+                orig[j] = block[inv[j]];
+            }
+            for (char c : orig) out.append(c);
+        }
+        return out.toString();
     }
 }
